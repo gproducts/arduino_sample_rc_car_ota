@@ -22,7 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+//
 // Should be set to Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS).
+//
 
 #include <ArduinoOTA.h>
 #include <WiFi.h>
@@ -54,12 +56,11 @@ BluetoothSerial SerialBT;
 #define INC2_CH (LEDC_CHANNEL_5)
 #define NUM_CH (6)
 
-// PWM Setting
-#define LEDC_HS_TIMER LEDC_TIMER_0
-#define LEDC_HS_MODE LEDC_HIGH_SPEED_MODE
-#define LEDC_TIMER_BIT LEDC_TIMER_4_BIT
-#define LEDC_MAX_DUTY (16)
-#define LEDC_PWMFREQ (400000)
+// PWM Setting (motor)
+#define LEDC_RESOLUTION (4)
+#define LEDC_MAX_DUTY (int)(pow(2, LEDC_RESOLUTION) - 1)
+#define LEDC_PWMFREQ (400000)  //400 kHz
+#define CMD_TIMEOUT (2000/10)     //2000 ms
 
 // RC Parameters
 #define RC_HEADER (0xff)
@@ -159,9 +160,9 @@ void setup() {
   IPAddress address = WiFi.softAPIP();
   Serial.println(address);
   ArduinoOTA.onStart([]() {})
-      .onEnd([]() {})
-      .onProgress([](unsigned int progress, unsigned int total) {})
-      .onError([](ota_error_t error) {});
+    .onEnd([]() {})
+    .onProgress([](unsigned int progress, unsigned int total) {})
+    .onError([](ota_error_t error) {});
   ArduinoOTA.begin();
   // -------------------------------------------------
 
@@ -185,19 +186,19 @@ void setup() {
   digitalWrite(INC2, LOW);
 
   // PWM initialize for Motor
-  ledcSetup(INA1_CH, LEDC_PWMFREQ, LEDC_TIMER_BIT);
+  ledcSetup(INA1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
   ledcAttachPin(INA1, INA1_CH);
-  ledcSetup(INA2_CH, LEDC_PWMFREQ, LEDC_TIMER_BIT);
+  ledcSetup(INA2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
   ledcAttachPin(INA2, INA2_CH);
 
-  ledcSetup(INB1_CH, LEDC_PWMFREQ, LEDC_TIMER_BIT);
+  ledcSetup(INB1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
   ledcAttachPin(INB1, INB1_CH);
-  ledcSetup(INB2_CH, LEDC_PWMFREQ, LEDC_TIMER_BIT);
+  ledcSetup(INB2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
   ledcAttachPin(INB2, INB2_CH);
 
-  ledcSetup(INC1_CH, LEDC_PWMFREQ, LEDC_TIMER_BIT);
+  ledcSetup(INC1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
   ledcAttachPin(INC1, INC1_CH);
-  ledcSetup(INC2_CH, LEDC_PWMFREQ, LEDC_TIMER_BIT);
+  ledcSetup(INC2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
   ledcAttachPin(INC2, INC2_CH);
 
   // Bluetooth UART initialize
@@ -272,7 +273,7 @@ void loop() {
   // MUST KEEP OTA CODE
   ArduinoOTA.handle();
   // -------------------------------------------------
-  
+
   if (SerialBT.available()) {
     dat = (uint8_t)SerialBT.read();
     rx_func(dat);
@@ -280,23 +281,27 @@ void loop() {
     // Get updated data
     if (flag_updated) {
       flag_updated = false;
-      digitalWrite(PIN_LED_STATUS, HIGH);
-
       // Motor control
       motor_func();
-
-      delay(50);
-      digitalWrite(PIN_LED_STATUS, LOW);
-    }
-    loop_count = 0;
-
-  } else {
-    delay(10);
-
-    // Showing connection status
-    if (++loop_count > 200) {
-      loop_count = 200;
       digitalWrite(PIN_LED_STATUS, HIGH);
+      loop_count = 0;
+    }
+  }
+  delay(10);
+
+  // Showing connection status
+  if (++loop_count > CMD_TIMEOUT) {
+    // force stop due to command timeout
+    loop_count = CMD_TIMEOUT;
+    flag_updated = false;
+    speed_L = 0;
+    speed_R = 0;
+    motor_func();
+    digitalWrite(PIN_LED_STATUS, HIGH);
+  } else {
+    if (loop_count > 20) {
+      // 200ms
+      digitalWrite(PIN_LED_STATUS, LOW);
     }
   }
 }
