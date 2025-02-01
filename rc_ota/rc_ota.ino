@@ -28,6 +28,7 @@ SOFTWARE.
 
 #include <ArduinoOTA.h>
 #include <WiFi.h>
+
 #include "BluetoothSerial.h"
 #include "driver/ledc.h"
 
@@ -59,8 +60,8 @@ BluetoothSerial SerialBT;
 // PWM Setting (motor)
 #define LEDC_RESOLUTION (4)
 #define LEDC_MAX_DUTY (int)(pow(2, LEDC_RESOLUTION) - 1)
-#define LEDC_PWMFREQ (400000)  //400 kHz
-#define CMD_TIMEOUT (2000/10)     //2000 ms
+#define LEDC_PWMFREQ (400000)    // 400 kHz
+#define CMD_TIMEOUT (2000 / 10)  // 2000 ms
 
 // RC Parameters
 #define RC_HEADER (0xff)
@@ -79,229 +80,229 @@ const IPAddress subnet(255, 255, 255, 0);
 
 void pwm_set_duty(uint8_t port, uint8_t duty)  // duty : 0~100%
 {
-  uint32_t duty_cal = duty;
-  if (duty > 100) {
-    duty_cal = 100;
-  }
-  duty_cal = duty_cal * LEDC_MAX_DUTY / 100;
+    uint32_t duty_cal = duty;
+    if (duty > 100) {
+        duty_cal = 100;
+    }
+    duty_cal = duty_cal * LEDC_MAX_DUTY / 100;
 
-  switch (port) {
-    case INA1:
-      ledcWrite(INA1_CH, duty_cal);
-      break;
-    case INA2:
-      ledcWrite(INA2_CH, duty_cal);
-      break;
-    case INB1:
-      ledcWrite(INB1_CH, duty_cal);
-      break;
-    case INB2:
-      ledcWrite(INB2_CH, duty_cal);
-      break;
-    case INC1:
-      ledcWrite(INC1_CH, duty_cal);
-      break;
-    case INC2:
-      ledcWrite(INC2_CH, duty_cal);
-      break;
-    default:
-      Serial.println("Error");
-      break;
-  }
+    switch (port) {
+        case INA1:
+            ledcWrite(INA1_CH, duty_cal);
+            break;
+        case INA2:
+            ledcWrite(INA2_CH, duty_cal);
+            break;
+        case INB1:
+            ledcWrite(INB1_CH, duty_cal);
+            break;
+        case INB2:
+            ledcWrite(INB2_CH, duty_cal);
+            break;
+        case INC1:
+            ledcWrite(INC1_CH, duty_cal);
+            break;
+        case INC2:
+            ledcWrite(INC2_CH, duty_cal);
+            break;
+        default:
+            Serial.println("Error");
+            break;
+    }
 }
 
 void motor_func() {
-  switch (direction_L) {
-    case 1:
-      pwm_set_duty(INA1, 100 - speed_L);
-      pwm_set_duty(INA2, 100);
-      Serial.println("L1");
-      break;
-    case 2:
-      pwm_set_duty(INA1, 100);
-      pwm_set_duty(INA2, 100 - speed_L);
-      Serial.println("L2");
-      break;
-    default:
-      pwm_set_duty(INA1, 100);
-      pwm_set_duty(INA2, 100);
-      Serial.println("L0");
-      break;
-  }
+    switch (direction_L) {
+        case 1:
+            pwm_set_duty(INA1, 100 - speed_L);
+            pwm_set_duty(INA2, 100);
+            Serial.println("L1");
+            break;
+        case 2:
+            pwm_set_duty(INA1, 100);
+            pwm_set_duty(INA2, 100 - speed_L);
+            Serial.println("L2");
+            break;
+        default:
+            pwm_set_duty(INA1, 100);
+            pwm_set_duty(INA2, 100);
+            Serial.println("L0");
+            break;
+    }
 
-  switch (direction_R) {
-    case 1:
-      pwm_set_duty(INB1, 100 - speed_R);
-      pwm_set_duty(INB2, 100);
-      Serial.println("R1");
-      break;
-    case 2:
-      pwm_set_duty(INB1, 100);
-      pwm_set_duty(INB2, 100 - speed_R);
-      Serial.println("R2");
-      break;
-    default:
-      pwm_set_duty(INB1, 100);
-      pwm_set_duty(INB2, 100);
-      Serial.println("R0");
-      break;
-  }
+    switch (direction_R) {
+        case 1:
+            pwm_set_duty(INB1, 100 - speed_R);
+            pwm_set_duty(INB2, 100);
+            Serial.println("R1");
+            break;
+        case 2:
+            pwm_set_duty(INB1, 100);
+            pwm_set_duty(INB2, 100 - speed_R);
+            Serial.println("R2");
+            break;
+        default:
+            pwm_set_duty(INB1, 100);
+            pwm_set_duty(INB2, 100);
+            Serial.println("R0");
+            break;
+    }
 }
 
 void setup() {
-  delay(1000);
-  Serial.begin(115200);
+    delay(1000);
+    Serial.begin(115200);
 
-  // -------------------------------------------------
-  // MUST KEEP OTA CODE
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.softAPConfig(ip, ip, IPAddress(255, 255, 255, 0));
-  WiFi.softAP(ssid, pass);
-  IPAddress address = WiFi.softAPIP();
-  Serial.println(address);
-  ArduinoOTA.onStart([]() {})
-    .onEnd([]() {})
-    .onProgress([](unsigned int progress, unsigned int total) {})
-    .onError([](ota_error_t error) {});
-  ArduinoOTA.begin();
-  // -------------------------------------------------
+    // -------------------------------------------------
+    // MUST KEEP OTA CODE
+    WiFi.mode(WIFI_AP_STA);
+    WiFi.softAPConfig(ip, ip, subnet);
+    WiFi.softAP(ssid, pass);
+    IPAddress address = WiFi.softAPIP();
+    Serial.println(address);
+    ArduinoOTA.onStart([]() {})
+        .onEnd([]() {})
+        .onProgress([](unsigned int progress, unsigned int total) {})
+        .onError([](ota_error_t error) {});
+    ArduinoOTA.begin();
+    // -------------------------------------------------
 
-  // GPIO initialize for LED
-  pinMode(PIN_LED_VFREAD, INPUT);
-  pinMode(PIN_LED_STATUS, OUTPUT);
-  digitalWrite(PIN_LED_STATUS, LOW);
+    // GPIO initialize for LED
+    pinMode(PIN_LED_VFREAD, INPUT);
+    pinMode(PIN_LED_STATUS, OUTPUT);
+    digitalWrite(PIN_LED_STATUS, LOW);
 
-  // GPIO initialize for Motor
-  pinMode(INA1, OUTPUT);
-  pinMode(INA2, OUTPUT);
-  pinMode(INB1, OUTPUT);
-  pinMode(INB2, OUTPUT);
-  pinMode(INC1, OUTPUT);
-  pinMode(INC2, OUTPUT);
-  digitalWrite(INA1, LOW);
-  digitalWrite(INA2, LOW);
-  digitalWrite(INB1, LOW);
-  digitalWrite(INB2, LOW);
-  digitalWrite(INC1, LOW);
-  digitalWrite(INC2, LOW);
+    // GPIO initialize for Motor
+    pinMode(INA1, OUTPUT);
+    pinMode(INA2, OUTPUT);
+    pinMode(INB1, OUTPUT);
+    pinMode(INB2, OUTPUT);
+    pinMode(INC1, OUTPUT);
+    pinMode(INC2, OUTPUT);
+    digitalWrite(INA1, LOW);
+    digitalWrite(INA2, LOW);
+    digitalWrite(INB1, LOW);
+    digitalWrite(INB2, LOW);
+    digitalWrite(INC1, LOW);
+    digitalWrite(INC2, LOW);
 
-  // PWM initialize for Motor
-  ledcSetup(INA1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
-  ledcAttachPin(INA1, INA1_CH);
-  ledcSetup(INA2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
-  ledcAttachPin(INA2, INA2_CH);
+    // PWM initialize for Motor
+    ledcSetup(INA1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
+    ledcAttachPin(INA1, INA1_CH);
+    ledcSetup(INA2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
+    ledcAttachPin(INA2, INA2_CH);
 
-  ledcSetup(INB1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
-  ledcAttachPin(INB1, INB1_CH);
-  ledcSetup(INB2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
-  ledcAttachPin(INB2, INB2_CH);
+    ledcSetup(INB1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
+    ledcAttachPin(INB1, INB1_CH);
+    ledcSetup(INB2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
+    ledcAttachPin(INB2, INB2_CH);
 
-  ledcSetup(INC1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
-  ledcAttachPin(INC1, INC1_CH);
-  ledcSetup(INC2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
-  ledcAttachPin(INC2, INC2_CH);
+    ledcSetup(INC1_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
+    ledcAttachPin(INC1, INC1_CH);
+    ledcSetup(INC2_CH, LEDC_PWMFREQ, LEDC_RESOLUTION);
+    ledcAttachPin(INC2, INC2_CH);
 
-  // Bluetooth UART initialize
-  SerialBT.begin("bt_uart");  // Bluetooth device name
+    // Bluetooth UART initialize
+    SerialBT.begin("bt_uart");  // Bluetooth device name
 
-  Serial.println("Initialized");
-  digitalWrite(PIN_LED_STATUS, HIGH);
+    Serial.println("Initialized");
+    digitalWrite(PIN_LED_STATUS, HIGH);
 }
 
 void rx_func(uint8_t rxdata) {
-  // Protocol
-  // 0xff + speedL + speedR + directionL + directionR
-  static uint8_t mode = 0;
-  static uint8_t b_speed_L;      // 0~100%
-  static uint8_t b_speed_R;      // 0~100%
-  static uint8_t b_direction_L;  // 0:idle, 1:forward, 2:reverse
-  static uint8_t b_direction_R;  // 0:idle, 1:forward, 2:reverse
+    // Protocol
+    // 0xff + speedL + speedR + directionL + directionR
+    static uint8_t mode = 0;
+    static uint8_t b_speed_L;      // 0~100%
+    static uint8_t b_speed_R;      // 0~100%
+    static uint8_t b_direction_L;  // 0:idle, 1:forward, 2:reverse
+    static uint8_t b_direction_R;  // 0:idle, 1:forward, 2:reverse
 
-  switch (mode) {
-    case 1:
-      mode = 2;
-      b_speed_L = rxdata;
-      break;
-    case 2:
-      mode = 3;
-      b_speed_R = rxdata;
-      break;
-    case 3:
-      mode = 4;
-      b_direction_L = rxdata;
-      break;
-    case 4:
-      mode = 0;
-      b_direction_R = rxdata;
+    switch (mode) {
+        case 1:
+            mode = 2;
+            b_speed_L = rxdata;
+            break;
+        case 2:
+            mode = 3;
+            b_speed_R = rxdata;
+            break;
+        case 3:
+            mode = 4;
+            b_direction_L = rxdata;
+            break;
+        case 4:
+            mode = 0;
+            b_direction_R = rxdata;
 
-      // Check if received data is updated.
-      flag_updated = false;
-      if (speed_L != b_speed_L) {
-        flag_updated = true;
-      }
-      if (speed_R != b_speed_R) {
-        flag_updated = true;
-      }
-      if (direction_L != b_direction_L) {
-        flag_updated = true;
-      }
-      if (direction_R != b_direction_R) {
-        flag_updated = true;
-      }
+            // Check if received data is updated.
+            flag_updated = false;
+            if (speed_L != b_speed_L) {
+                flag_updated = true;
+            }
+            if (speed_R != b_speed_R) {
+                flag_updated = true;
+            }
+            if (direction_L != b_direction_L) {
+                flag_updated = true;
+            }
+            if (direction_R != b_direction_R) {
+                flag_updated = true;
+            }
 
-      // Update parameters
-      if (flag_updated == true) {
-        speed_L = b_speed_L;
-        speed_R = b_speed_R;
-        direction_L = b_direction_L;
-        direction_R = b_direction_R;
-      }
-      break;
-    default:
-      if (rxdata == RC_HEADER) {
-        mode = 1;
-      } else {
-        mode = 0;
-      }
-  }
+            // Update parameters
+            if (flag_updated == true) {
+                speed_L = b_speed_L;
+                speed_R = b_speed_R;
+                direction_L = b_direction_L;
+                direction_R = b_direction_R;
+            }
+            break;
+        default:
+            if (rxdata == RC_HEADER) {
+                mode = 1;
+            } else {
+                mode = 0;
+            }
+    }
 }
 
 uint8_t loop_count = 0;
 
 void loop() {
-  // -------------------------------------------------
-  // MUST KEEP OTA CODE
-  ArduinoOTA.handle();
-  // -------------------------------------------------
+    // -------------------------------------------------
+    // MUST KEEP OTA CODE
+    ArduinoOTA.handle();
+    // -------------------------------------------------
 
-  if (SerialBT.available()) {
-    dat = (uint8_t)SerialBT.read();
-    rx_func(dat);
+    if (SerialBT.available()) {
+        dat = (uint8_t)SerialBT.read();
+        rx_func(dat);
 
-    // Get updated data
-    if (flag_updated) {
-      flag_updated = false;
-      // Motor control
-      motor_func();
-      digitalWrite(PIN_LED_STATUS, HIGH);
-      loop_count = 0;
+        // Get updated data
+        if (flag_updated) {
+            flag_updated = false;
+            // Motor control
+            motor_func();
+            digitalWrite(PIN_LED_STATUS, HIGH);
+            loop_count = 0;
+        }
     }
-  }
-  delay(10);
+    delay(10);
 
-  // Showing connection status
-  if (++loop_count > CMD_TIMEOUT) {
-    // force stop due to command timeout
-    loop_count = CMD_TIMEOUT;
-    flag_updated = false;
-    speed_L = 0;
-    speed_R = 0;
-    motor_func();
-    digitalWrite(PIN_LED_STATUS, HIGH);
-  } else {
-    if (loop_count > 20) {
-      // 200ms
-      digitalWrite(PIN_LED_STATUS, LOW);
+    // Showing connection status
+    if (++loop_count > CMD_TIMEOUT) {
+        // force stop due to command timeout
+        loop_count = CMD_TIMEOUT;
+        flag_updated = false;
+        speed_L = 0;
+        speed_R = 0;
+        motor_func();
+        digitalWrite(PIN_LED_STATUS, HIGH);
+    } else {
+        if (loop_count > 20) {
+            // 200ms
+            digitalWrite(PIN_LED_STATUS, LOW);
+        }
     }
-  }
 }
